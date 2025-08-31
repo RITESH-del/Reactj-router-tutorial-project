@@ -1,15 +1,17 @@
-import { Form, useLoaderData, redirect } from "react-router-dom";
+import { Form, useLoaderData, redirect, useNavigate } from "react-router-dom";
 import { updateContact } from "../contact";
 
 export async function action({request, params}) { //formData, formEnteries and
     const formData = await request.formData(); //access the form data from form element
     const updates = Object.fromEntries(formData); // Collects all the formData as objects
-    await updateContact(params.contactId, updates); 
+    await updateContact(params.contactId, updates); // send this to the updateContact() func in contact.js
     return redirect(`/contacts/${params.contactId}`); // So, when the function execute it redirects the action to '/contacts/:contactId' routes, 
 }
 
 export default function EditContact() {
   const { contact } = useLoaderData();
+  const navigate = useNavigate();
+
 
   return (
     <Form method="post" id="contact-form">
@@ -59,7 +61,10 @@ export default function EditContact() {
       </label>
       <p>
         <button type="submit">Save</button>
-        <button type="button">Cancel</button>
+        <button type="button"
+        onClick={() =>{
+          navigate(-1)
+        }}>Cancel</button>
       </p>
     </Form>
   );

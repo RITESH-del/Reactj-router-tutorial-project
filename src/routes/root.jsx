@@ -1,10 +1,19 @@
-import { Outlet, useLoaderData, Form, redirect, NavLink, useNavigation } from "react-router-dom";
+import {useEffect} from 'react';
+import { Outlet, useLoaderData, Form, redirect, NavLink, useNavigation, useSubmit } from "react-router-dom";
 import { getContacts, createContact } from '../contact';
 
-export async function loader() {
-  const contacts = await getContacts();
-  return { contacts } ;
+// export async function loader() {
+//   const contacts = await getContacts();
+//   return { contacts } ;
+// }
+
+export async function loader({ request }) { // Filter the list if there are URLSearchParams
+  const url = new URL(request.url);
+  const q = url.searchParams.get("q");
+  const contacts = await getContacts(q);
+  return { contacts, q }; //Return q from your loader and set it as the search field default value
 }
+
 
 export async function action() {
   const contact = await createContact();
@@ -12,8 +21,20 @@ export async function action() {
 }
 
 export default function Root() {
-  const { contacts } = useLoaderData(); //using userdefined loader function, and useLoaderData() hook to Access and render data
+  const { contacts, q } = useLoaderData(); //using userdefined loader function, and useLoaderData() hook to Access and render data
   const navigation = useNavigation();
+  const submit = useSubmit();
+
+const searching =
+  navigation.location &&
+  new URLSearchParams(navigation.location.search).has(
+    "q"
+  );
+
+useEffect(() => { //Synchronize input value with the URL Search Params
+    document.getElementById("q").value = q;
+  }, [q]);
+
   return (
     <>
       <div id="sidebar">
@@ -21,16 +42,23 @@ export default function Root() {
         <div>
           <Form id="search-form" role="search">
             <input
+            className={searching ? "loading" : ""} 
               id="q"
               aria-label="Search contacts"
               placeholder="Search"
               type="search"
               name="q"
+              defaultValue={q}
+              onChange={(event) => {
+                submit(event.currentTarget.form,  { // So, the Url  will only be made when the user presses the enter key
+                  replace: !isFirstSearch, // it controls how the new URL is stored in the browser history stack.
+                });
+              }}
             />
             <div
               id="search-spinner"
               aria-hidden
-              hidden={true}
+              hidden={!searching}
             />
             <div
               className="sr-only"
